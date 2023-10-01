@@ -23,6 +23,6 @@ export class AdministratorService {
     //updated piece of code
     getById(id: number): Promise<Administrator> {
         return this.administrator.findOne({ where: { id } } as FindOneOptions<Administrator>);
-    }    
+    }  
     
 }
