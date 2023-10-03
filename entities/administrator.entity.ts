@@ -38,3 +38,4 @@ export class Administrator {
   })
   passwordHash: string;
 }
+//model=entity
