@@ -1,5 +1,5 @@
 import { Body, Controller, Get, NotFoundException, Param, Post, Put } from "@nestjs/common";
-import { Administrator } from "entities/administrator.entity";
+import { Administrator } from "src/entities/administrator.entity";
 import { resolve } from "path";
 import { AddAdministratorDto } from "src/dtos/administrator/add.administrator.dto";
 import { EditAdministratorDto } from "src/dtos/administrator/edit.administrator.dto";
@@ -33,7 +33,7 @@ export class AdministratorController {
         });
     }*/
     @Get(':id')
-    async getById(@Param('id') administratorId: number): Promise<Administrator | ApiResponse> {
+    async getById(@Param('id') administratorId: number): Promise<Administrator | ApiResponse > {
     try {
         const admin = await this.administratorService.getById(administratorId);
 

@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Administrator } from 'entities/administrator.entity';
+import { Administrator } from 'src/entities/administrator.entity';
 import { resolve } from 'path';
 import { AddAdministratorDto } from 'src/dtos/administrator/add.administrator.dto';
 import { EditAdministratorDto } from 'src/dtos/administrator/edit.administrator.dto';
 import { ApiResponse } from 'src/misc/api.response.class';
-import { FindOneOptions, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import * as crypto from "crypto";
 
 @Injectable()
 export class AdministratorService {
-    constructor(
-        @InjectRepository(Administrator)
-        private readonly administrator: Repository<Administrator>
-    ) { }
+    constructor(@InjectRepository(Administrator) private readonly administrator: Repository<Administrator>) { }
 
     getAll(): Promise<Administrator[]> {
         return this.administrator.find();
@@ -25,7 +23,7 @@ export class AdministratorService {
 
     //updated piece of code
     getById(administratorId: number): Promise<Administrator> {
-        //return this.administrator.findOne({ where: { administratorId } });
+        //return this.administrator.findOne({ where: { administratorId } }); or ->
         return this.administrator.findOneBy({administratorId:administratorId});
         //the error was that it shouldn't be written id but administratorId instead
     }
@@ -35,7 +33,7 @@ export class AdministratorService {
         // username -> username
         // password -[~]-> passwordHash
 
-        const crypto = require('crypto');
+        //const crypto = require('crypto');
 
         const passwordHash = crypto.createHash('sha512');
         passwordHash.update(data.password);
