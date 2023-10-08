@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AddArticleDto } from "src/dtos/article/add.article.dto";
 import { ArticleService } from "src/services/article/article.service";
@@ -85,14 +85,16 @@ export class ArticleController {
                 // 1. Check ekstenzije: JPG, PNG
                 const allowedExtensions = /\.(jpg|jpeg|png)$/i; // Updated regex to match both upper and lower case extensions
                 if (!allowedExtensions.test(file.originalname)) {
-                  callback(new Error('Bad file extension!'), false);
+                  req.fileFilterError = 'Bad file extension!';
+                  callback(null, false);
                   return;
                 }
               
                 // 2. Check tipa sadrzaja: image/jpeg, image/png (MIME tip)
                 const allowedMimeTypes = ['image/jpeg', 'image/png'];
                 if (!allowedMimeTypes.includes(file.mimetype)) {
-                  callback(new Error('Bad file content!'), false);
+                  req.fileFilterError = 'Bad file content!';
+                  callback(null, false);
                   return;
                 }
               
@@ -101,13 +103,29 @@ export class ArticleController {
             },
             limits: {
                 files: 1,
-                fieldSize: StorageConfig.photoMaxFileSize
+                fileSize: StorageConfig.photoMaxFileSize
             }
         })
     )
-    async uploadPhoto(@Param('id') articleId: number, @UploadedFile() photo): Promise<Photo | ApiResponse>{
-        //let imagePath = photo.filename; // u zapis u bazu podataka
+    async uploadPhoto(
+        @Param('id') articleId: number, 
+        @UploadedFile() photo,
+        @Req() req
+    ): Promise<Photo | ApiResponse>{
 
+        if(req.fileFilterError){
+            return new ApiResponse('error', -4002, req.fileFilterError);
+        }
+
+        if(!photo){
+            return new ApiResponse('error', -4002, 'File not uploaded!');
+        }
+
+        //TODO: Real Mime Type check
+
+        //TODO: Save a resized file
+
+        //let imagePath = photo.filename; // u zapis u bazu podataka
         const newPhoto: Photo = new Photo();
         newPhoto.articleId = articleId;
         newPhoto.imagePath = photo.filename;
