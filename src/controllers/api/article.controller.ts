@@ -7,6 +7,9 @@ import { StorageConfig } from "config/storage.config";
 import { PhotoService } from "src/services/photo/photo.service";
 import { Photo } from "src/entities/photo.entity";
 import { ApiResponse } from "src/misc/api.response.class";
+import * as fileType from 'file-type';
+import * as fs from 'fs';
+import * as sharp from 'sharp';
 
 @Controller('api/article')
 export class ArticleController {
@@ -83,24 +86,41 @@ export class ArticleController {
             // }
             fileFilter: (req, file, callback) => {
                 // 1. Check ekstenzije: JPG, PNG
-                const allowedExtensions = /\.(jpg|jpeg|png)$/i; // Updated regex to match both upper and lower case extensions
-                if (!allowedExtensions.test(file.originalname)) {
-                  req.fileFilterError = 'Bad file extension!';
-                  callback(null, false);
-                  return;
+                if (!file.originalname.toLowerCase().match(/\.(jpg|png)$/)) {
+                    req.fileFilterError = 'Bad file extension!';
+                    callback(null, false);
+                    return;
                 }
-              
-                // 2. Check tipa sadrzaja: image/jpeg, image/png (MIME tip)
-                const allowedMimeTypes = ['image/jpeg', 'image/png'];
-                if (!allowedMimeTypes.includes(file.mimetype)) {
-                  req.fileFilterError = 'Bad file content!';
-                  callback(null, false);
-                  return;
+
+                // 2. Check tipa sadrzaja: image/jpeg, image/png (mimetype)
+                if (!(file.mimetype.includes('jpeg') || file.mimetype.includes('png'))) {
+                    req.fileFilterError = 'Bad file content type!';
+                    callback(null, false);
+                    return;
                 }
-              
-                // 3. Allow file upload
-                callback(null, true); // null means no error
+
+                callback(null, true);
             },
+            // fileFilter: (req, file, callback) => {
+            //     // 1. Check ekstenzije: JPG, PNG
+            //     const allowedExtensions = /\.(jpg|jpeg|png)$/i; // Updated regex to match both upper and lower case extensions
+            //     if (!allowedExtensions.test(file.originalname)) {
+            //       req.fileFilterError = 'Bad file extension!';
+            //       callback(null, false);
+            //       return;
+            //     }
+              
+            //     // 2. Check tipa sadrzaja: image/jpeg, image/png (MIME tip)
+            //     const allowedMimeTypes = ['image/jpeg', 'image/png'];
+            //     if (!allowedMimeTypes.includes(file.mimetype)) {
+            //       req.fileFilterError = 'Bad file content type!';
+            //       callback(null, false);
+            //       return;
+            //     }
+              
+            //     // 3. Allow file upload
+            //     callback(null, true); // null means no error
+            // },
             limits: {
                 files: 1,
                 fileSize: StorageConfig.photoMaxFileSize
@@ -108,33 +128,78 @@ export class ArticleController {
         })
     )
     async uploadPhoto(
-        @Param('id') articleId: number, 
+        @Param('id') articleId: number,
         @UploadedFile() photo,
         @Req() req
-    ): Promise<Photo | ApiResponse>{
-
-        if(req.fileFilterError){
+    ): Promise<ApiResponse | Photo> {
+        if (req.fileFilterError) {
             return new ApiResponse('error', -4002, req.fileFilterError);
         }
 
-        if(!photo){
+        if (!photo) {
             return new ApiResponse('error', -4002, 'File not uploaded!');
         }
 
-        //TODO: Real Mime Type check
+        const fileTypeResult = await fileType.fromFile(photo.path);
+        if (!fileTypeResult) {
+            fs.unlinkSync(photo.path);
+            return new ApiResponse('error', -4002, 'Cannot detect file type!');
+        }
 
-        //TODO: Save a resized file
+        const realMimeType = fileTypeResult.mime;
+        if (!(realMimeType.includes('jpeg') || realMimeType.includes('png'))) {
+            fs.unlinkSync(photo.path);
+            return new ApiResponse('error', -4002, 'Bad file content type!');
+        }
 
-        //let imagePath = photo.filename; // u zapis u bazu podataka
+        await this.createThumb(photo);
+        await this.createSmallImage(photo);
+
         const newPhoto: Photo = new Photo();
         newPhoto.articleId = articleId;
         newPhoto.imagePath = photo.filename;
 
         const savedPhoto = await this.photoService.add(newPhoto);
-        if(!savedPhoto){
-            return new ApiResponse('error', -4001, 'Photo not uploaded!');
+        if (!savedPhoto) {
+            return new ApiResponse('error', -4001);
         }
 
         return savedPhoto;
+    }
+
+    async createThumb(photo) {
+        const originalFilePath = photo.path;
+        const fileName = photo.filename;
+
+        const destinationFilePath = StorageConfig.photoDestination + 'thumb/' + fileName;
+
+        await sharp(originalFilePath)
+            .resize({
+                fit: 'cover',
+                width: StorageConfig.photoThumbSize.width,
+                height: StorageConfig.photoThumbSize.height,
+                background: {
+                    r: 255, g: 255, b: 255, alpha: 0.0
+                }
+            })
+            .toFile(destinationFilePath);
+    }
+
+    async createSmallImage(photo) {
+        const originalFilePath = photo.path;
+        const fileName = photo.filename;
+
+        const destinationFilePath = StorageConfig.photoDestination + 'small/' + fileName;
+
+        await sharp(originalFilePath)
+            .resize({
+                fit: 'cover',
+                width: StorageConfig.photoSmallSize.width,
+                height: StorageConfig.photoSmallSize.height,
+                background: {
+                    r: 255, g: 255, b: 255, alpha: 0.0
+                }
+            })
+            .toFile(destinationFilePath);
     }
 }
