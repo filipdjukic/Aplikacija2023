@@ -20,7 +20,6 @@ export class AuthController {
         if (!administrator){
             return new Promise(resolve => resolve(new ApiResponse('error', -3001)));
         }
-
         
         const passwordHash = crypto.createHash('sha512');
         passwordHash.update(data.password);
@@ -30,16 +29,6 @@ export class AuthController {
             return new Promise(resolve => resolve(new ApiResponse('error', -3002)));
         }
 
-        //administratorId
-        //username
-        //token (JWT)
-        //   TAJNA SIFRA
-        //   JSON = {administratorId, username, exp, ip, ua}
-        //   Sifrovanje ( TAJNA SIFRA -> JSON ) -> Sifrat binarni -> BASE64/HEX
-        // HEX STRING
-
-        // TOKEN = JSON {administratorId, username, exp, ip, ua}
-
         const jwtData = new JwtDataAdministratorDto();
         jwtData.administratorId = administrator.administratorId;
         jwtData.username = administrator.username;
@@ -47,7 +36,7 @@ export class AuthController {
         let sada = new Date();
         sada.setDate(sada.getDate() + 14);
         const istekTimestamp = sada.getTime() / 1000;
-        jwtData.ext = istekTimestamp;
+        jwtData.exp = istekTimestamp;
 
         jwtData.ip = req.ip.toString();
         jwtData.ua = req.headers["user-agent"];

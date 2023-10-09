@@ -48,11 +48,16 @@ import { PhotoService } from './services/photo/photo.service';
      }),
      TypeOrmModule.forFeature([ 
       Administrator,
-      Category,
-      Article,
-      ArticlePrice,
       ArticleFeature,
+      ArticlePrice,
+      Article,
+      CartArticle,
+      Cart,
+      Category,
+      Feature,
+      Order,
       Photo,
+      User
     ])
   ],
   controllers: [

@@ -18,17 +18,6 @@ export class AdministratorController {
         return this.administratorService.getAll();
     }
 
-    /*@Get(':id')
-    getById(@Param('id') administratorId: number): Promise<Administrator | ApiResponse> {
-        return new Promise(async (resolve) => {
-            let admin = await this.administratorService.getById(administratorId);
-            if (admin === undefined) {
-                resolve(new ApiResponse("error", -1002));
-            }
-            resolve(admin);
-        });
-    }*/
-
     // GET http://localhost:3000/api/administrator/4
     @Get(':id')
     async getById(@Param('id') administratorId: number): Promise<Administrator | ApiResponse > {

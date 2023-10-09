@@ -18,7 +18,6 @@ export class ArticleController {
         public photoService: PhotoService
     ) { }
 
-    //create get method and get by id method
     @Get() // GET http://localhost:3000/api/article/
     getAll() {
         return this.articleService.getAll();
@@ -38,11 +37,11 @@ export class ArticleController {
         return this.articleService.createFullArticle(data);
     }
 
-    @Post(':id/uploadPhoto/') //Post http://localhost:3000/api/article/:id/uploadPhoto/
+    @Post(':id/uploadPhoto/') //POST http://localhost:3000/api/article/:id/uploadPhoto/
     @UseInterceptors(
         FileInterceptor('photo', {
             storage: diskStorage({
-                destination: StorageConfig.photoDestination,
+                destination: StorageConfig.photo.destination,
                 filename: (req, file, callback) => {
                     // 'Neka slika.jpg' ->
                     // '20231008-978530076-Neka-slika.jpg'
@@ -68,22 +67,6 @@ export class ArticleController {
                     callback(null, fileName);
                 }
             }),
-            // fileFilter: (req, file, callback) => {
-            //     // 1. Check ekstenzije: JPG, PNG
-            //     if(!file.originalname.match(/\.(jpg|png)$/)){
-            //         callback(new Error('Bad file extension!'), false);
-            //         return;
-            //     }
-
-            //     // 2. Check tipa sadrzaja: image/jpeg, image/png (MIME tip)
-            //     if(!file.mimetype.includes('jpeg') || !file.mimetype.includes('png')){
-            //         callback(new Error('Bad file content!'), false);
-            //         return;
-            //     }
-
-            //     // 3. Allow file upload
-            //     callback(null, true); //null means no error
-            // }
             fileFilter: (req, file, callback) => {
                 // 1. Check ekstenzije: JPG, PNG
                 if (!file.originalname.toLowerCase().match(/\.(jpg|png)$/)) {
@@ -101,29 +84,9 @@ export class ArticleController {
 
                 callback(null, true);
             },
-            // fileFilter: (req, file, callback) => {
-            //     // 1. Check ekstenzije: JPG, PNG
-            //     const allowedExtensions = /\.(jpg|jpeg|png)$/i; // Updated regex to match both upper and lower case extensions
-            //     if (!allowedExtensions.test(file.originalname)) {
-            //       req.fileFilterError = 'Bad file extension!';
-            //       callback(null, false);
-            //       return;
-            //     }
-              
-            //     // 2. Check tipa sadrzaja: image/jpeg, image/png (MIME tip)
-            //     const allowedMimeTypes = ['image/jpeg', 'image/png'];
-            //     if (!allowedMimeTypes.includes(file.mimetype)) {
-            //       req.fileFilterError = 'Bad file content type!';
-            //       callback(null, false);
-            //       return;
-            //     }
-              
-            //     // 3. Allow file upload
-            //     callback(null, true); // null means no error
-            // },
             limits: {
                 files: 1,
-                fileSize: StorageConfig.photoMaxFileSize
+                fileSize: StorageConfig.photo.maxSize
             }
         })
     )
@@ -152,8 +115,8 @@ export class ArticleController {
             return new ApiResponse('error', -4002, 'Bad file content type!');
         }
 
-        await this.createThumb(photo);
-        await this.createSmallImage(photo);
+        await this.createResizedImage(photo, StorageConfig.photo.resize.thumb);
+        await this.createResizedImage(photo, StorageConfig.photo.resize.small);
 
         const newPhoto: Photo = new Photo();
         newPhoto.articleId = articleId;
@@ -167,38 +130,20 @@ export class ArticleController {
         return savedPhoto;
     }
 
-    async createThumb(photo) {
+    async createResizedImage(photo, resizeSettings) {
         const originalFilePath = photo.path;
         const fileName = photo.filename;
 
-        const destinationFilePath = StorageConfig.photoDestination + 'thumb/' + fileName;
+        const destinationFilePath = 
+            StorageConfig.photo.destination + 
+            resizeSettings.directory + 
+            fileName;
 
         await sharp(originalFilePath)
             .resize({
                 fit: 'cover',
-                width: StorageConfig.photoThumbSize.width,
-                height: StorageConfig.photoThumbSize.height,
-                background: {
-                    r: 255, g: 255, b: 255, alpha: 0.0
-                }
-            })
-            .toFile(destinationFilePath);
-    }
-
-    async createSmallImage(photo) {
-        const originalFilePath = photo.path;
-        const fileName = photo.filename;
-
-        const destinationFilePath = StorageConfig.photoDestination + 'small/' + fileName;
-
-        await sharp(originalFilePath)
-            .resize({
-                fit: 'cover',
-                width: StorageConfig.photoSmallSize.width,
-                height: StorageConfig.photoSmallSize.height,
-                background: {
-                    r: 255, g: 255, b: 255, alpha: 0.0
-                }
+                width: resizeSettings.width,
+                height: resizeSettings.height
             })
             .toFile(destinationFilePath);
     }
