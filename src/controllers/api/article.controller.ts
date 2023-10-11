@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AddArticleDto } from "src/dtos/article/add.article.dto";
 import { ArticleService } from "src/services/article/article.service";
@@ -10,6 +10,7 @@ import { ApiResponse } from "src/misc/api.response.class";
 import * as fileType from 'file-type';
 import * as fs from 'fs';
 import * as sharp from 'sharp';
+import { EditArticleDto } from "src/dtos/article/edit.article.dto";
 
 @Controller('api/article')
 export class ArticleController {
@@ -35,6 +36,11 @@ export class ArticleController {
     @Post('createFull') // POST http://localhost:3000/api/article/createFull/
     createFullArticle(@Body() data: AddArticleDto) {
         return this.articleService.createFullArticle(data);
+    }
+
+    @Patch(':id') // PATCH http://localhost:3000/api/article/2/
+    editFullArticle(@Param('id') id: number, @Body() data: EditArticleDto) {
+        return this.articleService.editFullArticle(id, data);
     }
 
     @Post(':id/uploadPhoto/') //POST http://localhost:3000/api/article/:id/uploadPhoto/
@@ -173,7 +179,7 @@ export class ArticleController {
                           StorageConfig.photo.resize.small.directory
                           + photo.imagePath);
         } catch (e) { }
-        
+
         const deleteResult = await this.photoService.deleteById(photo.photoId); // or just photoId
 
         if (deleteResult.affected === 0){
