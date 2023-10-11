@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { AddArticleDto } from "src/dtos/article/add.article.dto";
 import { ArticleService } from "src/services/article/article.service";
@@ -146,5 +146,41 @@ export class ArticleController {
                 height: resizeSettings.height
             })
             .toFile(destinationFilePath);
+    }
+
+    // http://localhost:3000/api/article/:articleId/deletePhoto/:photoId/
+    @Delete(':articleId/deletePhoto/:photoId')
+    public async deletePhoto(
+        @Param('articleId') articleId: number,
+        @Param('photoId') photoId: number
+    ) { 
+        const photo = await this.photoService.findOne({
+            where: {
+                articleId: articleId,
+                photoId: photoId
+            }
+        });
+
+        if (!photo) {
+            return new ApiResponse('error', -4004, 'Photo not found.');
+        }
+        try{
+            fs.unlinkSync(StorageConfig.photo.destination + photo.imagePath);
+            fs.unlinkSync(StorageConfig.photo.destination + 
+                          StorageConfig.photo.resize.thumb.directory
+                          + photo.imagePath);
+            fs.unlinkSync(StorageConfig.photo.destination + 
+                          StorageConfig.photo.resize.small.directory
+                          + photo.imagePath);
+        } catch (e) { }
+        
+        const deleteResult = await this.photoService.deleteById(photo.photoId); // or just photoId
+
+        if (deleteResult.affected === 0){
+            return new ApiResponse('error', -4004, 'Photo not found.');
+        }
+
+        return new ApiResponse('ok', 0, 'One photo deleted.');
+                      
     }
 }
