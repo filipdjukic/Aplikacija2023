@@ -28,4 +28,16 @@ export class CategoryService /*extends TypeOrmCrudService<Category>*/ {
     }
 
     // Edit category
+    async editById(categoryId: number, data: Category): Promise<Category | ApiResponse>{
+        let category: Category = await this.category.findOne({ where: { categoryId } });
+
+        if (category === undefined) {
+            return new ApiResponse('error', -1002, 'Category not found.');
+        }
+
+        category.name = data.name;
+        category.imagePath = data.imagePath;
+
+        return this.category.save(category);
+    }
 }

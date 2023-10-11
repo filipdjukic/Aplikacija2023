@@ -30,19 +30,19 @@ export class CategoryController {
     // GET http://localhost:3000/api/category/4
     @Get(':id')
     async getById(@Param('id') categoryId: number): Promise<Category | ApiResponse> {
-    try {
-      const category = await this.categoryService.getById(categoryId);
-    
-      console.log(category);
-      if (!category) {
-        throw new NotFoundException('Category not found');
-      }
+        try {
+            const category = await this.categoryService.getById(categoryId);
+        
+            console.log(category);
+            if (!category) {
+                throw new NotFoundException('Category not found');
+            }
 
-      return category;
-    } catch (error) {
-      console.log(error);
-      return new ApiResponse("error", -1003);
-    }
+            return category;
+        } catch (error) {
+            console.log(error);
+            return new ApiResponse("error", -1003);
+        }
     }
     //POST http://localhost:3000/api/category
     /*@Post()
