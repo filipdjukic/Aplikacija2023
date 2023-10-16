@@ -35,7 +35,7 @@ export class ArticleController {
         return this.articleService.getArticlePrice(articleId);
     }
 
-    @Post('createFull') // POST http://localhost:3000/api/article/createFull/
+    @Post() // POST http://localhost:3000/api/article/
     @UseGuards(RoleCheckedGuard)
     @AllowToRoles('administrator')
     createFullArticle(@Body() data: AddArticleDto) {
