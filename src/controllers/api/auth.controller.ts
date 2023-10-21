@@ -87,7 +87,7 @@ export class AuthController {
         jwtData.identity = user.email;
 
         let sada = new Date();
-        sada.setDate(sada.getDate() + 14);
+        sada.setDate(sada.getDate() + 140);
         const istekTimestamp = sada.getTime() / 1000;
         jwtData.exp = istekTimestamp;
 
