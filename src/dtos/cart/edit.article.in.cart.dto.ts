@@ -1,6 +1,6 @@
 import * as Validator from 'class-validator';
 
-export class editArticleInCartDto{
+export class EditArticleInCartDto{
     articleId: number;
 
     @Validator.IsNotEmpty()
